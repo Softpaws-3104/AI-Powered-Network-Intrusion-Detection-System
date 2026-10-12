@@ -1,0 +1,25 @@
+ISOLATION FOREST TEST RESULTS
+Dataset: /home/kali/AI-Network-Traffic-Analyzer/processed/binary_network_traffic.csv
+Label column: Label
+Rows evaluated: 33585
+Features: 39
+Benign training rows: 67170
+Accuracy: 0.850558
+Precision_ATTACK: 0.933697
+Recall_ATTACK: 0.754719
+F1_ATTACK: 0.834722
+ROC_AUC: 0.944980
+
+Confusion matrix (true rows / predicted columns; BENIGN, ATTACK):
+[[15892   900]
+ [ 4119 12674]]
+
+              precision    recall  f1-score   support
+
+      BENIGN       0.79      0.95      0.86     16792
+      ATTACK       0.93      0.75      0.83     16793
+
+    accuracy                           0.85     33585
+   macro avg       0.86      0.85      0.85     33585
+weighted avg       0.86      0.85      0.85     33585
+
