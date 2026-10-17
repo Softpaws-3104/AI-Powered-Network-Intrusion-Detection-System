@@ -3,11 +3,17 @@ __pycache__/
 *.py[cod]
 *.pyo
 
-# Virtual environments and secrets
+# Virtual environments
 .venv/
 venv/
+
+# Secrets and local configuration
 .env
 .env.*
+!.env.example
+.streamlit/secrets.toml
+*.pem
+*.key
 
 # Local datasets and generated data
 dataset/
@@ -15,6 +21,8 @@ processed/
 backups/
 *.pcap
 *.pcapng
+
+# Large archives
 *.zip
 
 # Local backup and editor files
@@ -23,8 +31,11 @@ backups/
 *.before_*
 *.save
 
-# Generated reports: review before publishing
-reports/*.csv
+# Large per-record evaluation exports
+reports/*predictions.csv
+reports/*test_results.csv
+reports/unified_holdout_evaluation.csv
 
-# Streamlit local configuration
-.streamlit/secrets.toml
+# Operating system files
+.DS_Store
+Thumbs.db
