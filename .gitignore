@@ -1,0 +1,36 @@
+# Python environments and cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Datasets and generated data
+dataset/
+processed/*.csv
+*.pcap
+*.pcapng
+
+# Large archive
+AI-Network-Traffic-Analyzer.zip
+*.zip
+
+# Backup files
+*.backup
+*.backup_*
+*.before_feature_fix
+
+# Large per-record evaluation exports
+reports/*predictions.csv
+reports/*test_results.csv
+reports/unified_holdout_evaluation.csv
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Operating system files
+.DS_Store
+Thumbs.db
