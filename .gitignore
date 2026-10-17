@@ -1,0 +1,30 @@
+# Python temporary files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments and secrets
+.venv/
+venv/
+.env
+.env.*
+
+# Local datasets and generated data
+dataset/
+processed/
+backups/
+*.pcap
+*.pcapng
+*.zip
+
+# Local backup and editor files
+*.backup
+*.backup*
+*.before_*
+*.save
+
+# Generated reports: review before publishing
+reports/*.csv
+
+# Streamlit local configuration
+.streamlit/secrets.toml

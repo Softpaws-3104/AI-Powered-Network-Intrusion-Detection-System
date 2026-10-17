@@ -1,16 +1,22 @@
-# AI Network Traffic Analyzer
+# AI-Powered Network Intrusion Detection and Anomaly Analysis System
 
-A Python-based cybersecurity project that analyzes network traffic, classifies potential attacks, detects unusual activity, and presents results through an interactive Streamlit dashboard.
+An AI/ML-based cybersecurity project that analyzes network traffic,
+classifies potentially malicious activity, detects anomalous patterns,
+and presents security insights through an interactive Streamlit dashboard.
 
 ## Features
 
-- **Network traffic analysis:** Analyze packet-capture data and identify protocols, source IPs, and destination IPs.
-- **Random Forest classifier:** Classify network traffic as benign or potentially malicious.
-- **Isolation Forest anomaly detection:** Identify traffic patterns that differ from normal behavior.
-- **Unified detection engine:** Combine the outputs of both models to distinguish confirmed alerts, classifier-only alerts, anomaly-only alerts, and benign candidates.
-- **Interactive dashboard:** Explore traffic statistics, attack analysis, anomaly results, and model comparisons.
-- **Evaluation reports:** Review model metrics and threshold comparisons.
-- **CSV export:** Download detection results for further analysis.
+- **Network traffic classification:** Use a Random Forest model to
+  distinguish benign traffic from potentially malicious traffic.
+- **Anomaly detection:** Use Isolation Forest to identify unusual
+  network behavior.
+- **Unified detection engine:** Combine classification and anomaly
+  signals to support more comprehensive traffic analysis.
+- **Interactive dashboard:** Explore traffic statistics, detection
+  results, anomaly scores, and model evaluation.
+- **Model evaluation:** Compare detection performance, decision
+  thresholds, false positives, and missed attacks.
+- **CSV reports:** Export or inspect analysis results for further review.
 
 ## Technology Stack
 
@@ -25,54 +31,84 @@ A Python-based cybersecurity project that analyzes network traffic, classifies p
 ## Project Structure
 
 ```text
-network-traffic-analyzer/
-├── analyzer.py
-├── prepare_dataset.py
-├── train_model.py
-├── train_anomaly.py
+AI-Powered-Network-Intrusion-Detection-System/
 ├── dashboard/
 │   └── app.py
 ├── detection_engine/
-│   ├── unified_detector.py
 │   ├── compare_models.py
-│   └── evaluation scripts
+│   ├── evaluate_saved_thresholds.py
+│   ├── evaluate_unified_holdout.py
+│   ├── test_unified_detector.py
+│   ├── tune_anomaly_threshold.py
+│   ├── unified_detector.py
+│   └── validate_saved_anomaly.py
 ├── models/
-│   ├── random_forest_binary.joblib
 │   ├── isolation_forest.joblib
-│   └── isolation_forest_v2.joblib
-└── reports/
-    ├── fair_model_comparison.csv
-    ├── unified_holdout_metrics.csv
-    └── other evaluation summaries
+│   ├── isolation_forest_v2.joblib
+│   └── random_forest_binary.joblib
+├── reports/
+├── prepare_dataset.py
+├── train_anomaly.py
+├── train_model.py
+└── README.md
 ```
 
-## Model Evaluation
+## Setup
 
-In the current evaluation results:
+Create and activate a virtual environment:
 
-| Model / strategy | Accuracy | Precision | Recall | F1 score |
-|---|---:|---:|---:|---:|
-| Random Forest | 99.15% | 99.96% | 98.33% | 99.14% |
-| Isolation Forest | 84.99% | 92.77% | 75.89% | 83.49% |
-| Unified: either model flags | 96.42% | 94.35% | 98.75% | 96.50% |
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-These results depend on the dataset, decision thresholds, and evaluation setup. The unified strategy prioritizes attack recall but can generate more false alarms. The figures are experimental results, not a guarantee of real-world detection performance.
+Install the required packages:
 
-## Running the Dashboard
+```bash
+pip install pandas numpy scikit-learn scapy streamlit joblib
+```
 
-1. Install Python and create a virtual environment.
-2. Install the project's required Python packages.
-3. Ensure the trained model files and processed dataset are available in the expected paths.
-4. From the project root, run:
+Install any additional dependencies required by the project scripts.
+
+## Run the Dashboard
+
+From the project root, run:
 
 ```bash
 streamlit run dashboard/app.py
 ```
 
-## Responsible Use
+## Model Training
 
-Use this project only on network traffic you own or are authorized to analyze. Detection results are indicators for investigation, not definitive proof of malicious activity.
+The repository includes training scripts for the classification
+and anomaly-detection models.
 
-## Author
+```bash
+python3 train_model.py
+python3 train_anomaly.py
+```
 
-Developed as a cybersecurity and machine-learning project to explore network traffic classification, anomaly detection, and interactive security monitoring.
+Training requires the appropriate prepared dataset and dependencies.
+Review the scripts and dataset paths before running them.
+
+## Data and Model Notes
+
+- Raw datasets, processed datasets, packet captures, and local backups
+  are excluded from Git by default.
+- Trained model files are stored in `models/`.
+- Evaluation summaries are stored in `reports/`.
+- Model performance depends on the dataset, feature preparation,
+  threshold selection, and evaluation methodology.
+- Offline dataset performance does not guarantee equivalent
+  performance on live network traffic.
+
+## Project Goal
+
+Develop a practical machine-learning-based network security tool
+that combines intrusion classification, anomaly detection, and
+interactive analysis to support cybersecurity investigation.
+
+## Disclaimer
+
+Use network monitoring and packet capture only on systems and networks
+you own or are explicitly authorized to analyze.
