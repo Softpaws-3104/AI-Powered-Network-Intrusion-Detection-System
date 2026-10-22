@@ -1,0 +1,21 @@
+RANDOM FOREST GROUP-AWARE HOLDOUT EVALUATION
+Dataset rows: 167924
+Feature count: 39
+Unique feature groups: 160843
+Training rows: 134274
+Testing rows: 33650
+Training feature groups: 128674
+Testing feature groups: 32169
+Train/test group overlap: 0
+Groups with conflicting original labels: 1663
+
+Accuracy: 0.9921
+Precision: 0.9999
+Attack recall: 0.9844
+F1 score: 0.9921
+ROC-AUC: 0.9994
+
+Confusion matrix [[TN, FP], [FN, TP]]:
+[[16821, 2], [263, 16564]]
+
+Note: evaluates the saved Random Forest; no model retraining performed.
