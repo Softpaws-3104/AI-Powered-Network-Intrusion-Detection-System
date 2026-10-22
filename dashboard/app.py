@@ -16,9 +16,102 @@ from detection_engine.unified_detector import UnifiedDetector
 # PAGE CONFIG
 # ============================================================
 st.set_page_config(
-    page_title="AI Network Traffic Analyzer",
-    page_icon="🛡️",
+    page_title="AI-Powered Network Intrusion Detection and Anomaly Analysis System",
+    page_icon="📡",
     layout="wide"
+)
+
+
+# ============================================================
+# GLOBAL VISUAL THEME — consistent with the project header
+# ============================================================
+px.defaults.template = "plotly_dark"
+st.markdown(
+    """
+    <style>
+    :root {
+        --page-bg: #0b1119;
+        --panel-bg: #101b24;
+        --panel-bg-2: #12232b;
+        --teal: #2dd4bf;
+        --cyan: #7dd3fc;
+        --main-text: #e7eef5;
+        --muted-text: #9aaabd;
+        --panel-border: rgba(45, 212, 191, 0.22);
+    }
+    .stApp {
+        background: radial-gradient(ellipse at 5% 0%, #10272b 0%, #0b1119 43%, #0b1119 100%);
+        color: var(--main-text);
+    }
+    [data-testid="stHeader"] { background: rgba(11, 17, 25, 0.88); }
+    [data-testid="stToolbar"] { right: 1rem; }
+    .block-container { padding-top: 1.6rem; padding-bottom: 3rem; max-width: 1600px; }
+    h1, h2, h3, h4 { color: #edf4fa !important; letter-spacing: -0.02em; }
+    h2, h3 { margin-top: 0.45rem; }
+    p, label, .stMarkdown, [data-testid="stCaptionContainer"] { color: #c7d3df; }
+    [data-testid="stMetric"] {
+        background: linear-gradient(145deg, rgba(18, 35, 43, 0.98), rgba(13, 23, 32, 0.98));
+        border: 1px solid var(--panel-border);
+        border-radius: 14px; padding: 18px 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        min-height: 112px;
+    }
+    [data-testid="stMetricLabel"] { color: #9fb3c5 !important; font-size: 0.88rem; }
+    [data-testid="stMetricValue"] { color: #eff8ff !important; font-weight: 700; }
+    [data-testid="stMetricDelta"] { color: var(--teal) !important; }
+    [data-testid="stTabs"] [data-baseweb="tab-list"] {
+        gap: 7px; border-bottom: 1px solid rgba(45, 212, 191, 0.18);
+        background: rgba(12, 22, 30, 0.78); padding: 8px; border-radius: 13px 13px 0 0;
+    }
+    [data-testid="stTabs"] button[role="tab"] {
+        color: #a9bac9; border-radius: 9px; padding: 10px 13px;
+        border: 1px solid transparent; transition: all 120ms ease-in-out;
+    }
+    [data-testid="stTabs"] button[role="tab"]:hover {
+        color: #e8ffff; background: rgba(45, 212, 191, 0.08);
+    }
+    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        color: #5eead4; background: rgba(45, 212, 191, 0.10);
+        border: 1px solid rgba(45, 212, 191, 0.26);
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border-color: rgba(45, 212, 191, 0.20) !important; border-radius: 14px !important;
+    }
+    [data-testid="stDataFrame"], [data-testid="stTable"] {
+        border: 1px solid rgba(45, 212, 191, 0.18); border-radius: 12px; overflow: hidden;
+    }
+    [data-testid="stDataFrame"] [role="grid"] { background: #101a23; }
+    [data-testid="stPlotlyChart"] {
+        background: linear-gradient(145deg, rgba(16, 27, 36, 0.78), rgba(12, 20, 29, 0.72));
+        border: 1px solid rgba(45, 212, 191, 0.16); border-radius: 14px;
+        padding: 8px 8px 0 8px;
+    }
+    .stButton > button, .stDownloadButton > button {
+        color: #eafffb; background: linear-gradient(110deg, #0f766e, #115e59);
+        border: 1px solid rgba(94, 234, 212, 0.42); border-radius: 10px;
+        padding: 0.55rem 1rem; font-weight: 650;
+    }
+    .stButton > button:hover, .stDownloadButton > button:hover {
+        color: #ffffff; border-color: #5eead4; background: linear-gradient(110deg, #0d9488, #0f766e);
+    }
+    [data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {
+        background-color: #2dd4bf; border-color: #2dd4bf;
+    }
+    [data-baseweb="select"] > div, [data-baseweb="input"] > div,
+    [data-baseweb="textarea"] > div {
+        background: #101b24; border-color: rgba(125, 211, 252, 0.24); border-radius: 9px;
+    }
+    [data-testid="stAlert"] { border-radius: 12px; border: 1px solid rgba(125, 211, 252, 0.20); }
+    hr { border-color: rgba(125, 211, 252, 0.18) !important; }
+    code { color: #7dd3fc; background: rgba(125, 211, 252, 0.08); }
+    @media (max-width: 800px) {
+        .block-container { padding-left: 1rem; padding-right: 1rem; }
+        [data-testid="stMetric"] { padding: 13px; }
+        [data-testid="stTabs"] [data-baseweb="tab-list"] { gap: 3px; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 # ============================================================
@@ -71,17 +164,41 @@ if "binary_label" not in df.columns:
     st.stop()
 
 # ============================================================
-# HEADER
+# OFFICIAL PROJECT HEADER
 # ============================================================
-st.title("🛡️ AI Network Traffic Analyzer")
 st.markdown(
     """
-    **AI-powered network traffic monitoring and intrusion detection dashboard**
-
-    Analyze network traffic using a supervised Random Forest classifier and an
-    unsupervised Isolation Forest anomaly detector.
-    """
+    <div style="
+        background: linear-gradient(110deg, rgba(13, 35, 40, 0.98), rgba(12, 18, 28, 0.99));
+        border: 1px solid rgba(45, 212, 191, 0.28);
+        border-radius: 16px;
+        padding: 28px 30px;
+        margin-bottom: 22px;
+    ">
+        <div style="color: #2dd4bf; font-size: 0.76rem; font-weight: 700;
+                    letter-spacing: 2px; margin-bottom: 12px;">
+            NETWORK SECURITY / MACHINE LEARNING
+        </div>
+        <h1 style="margin: 0; font-size: 2.0rem; line-height: 1.3; color: #f1f5f9;">
+            AI-Powered Network Intrusion Detection and Anomaly Analysis System
+        </h1>
+        <div style="margin-top: 9px; font-size: 1.08rem; color: #7dd3fc;">
+            Network Traffic Classification, Anomaly Analysis, and Investigation
+        </div>
+        <p style="margin: 20px 0 0 0; max-width: 850px; line-height: 1.75; color: #cbd5e1;">
+            A machine-learning platform for classifying network traffic, identifying
+            anomalous behavior, and comparing detection outcomes for security investigation.
+        </p>
+        <div style="margin-top: 22px; padding-top: 14px;
+                    border-top: 1px solid rgba(148, 163, 184, 0.2);
+                    color: #94a3b8; font-size: 0.82rem;">
+            OFFLINE DATASET ANALYSIS &nbsp; &#8226; &nbsp; LIVE DETECTION UNDER DEVELOPMENT
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
+st.caption("Machine-learning dashboard for prepared network traffic datasets")
 st.divider()
 
 # ============================================================
@@ -513,4 +630,4 @@ with tab_unified:
         )
 
 st.divider()
-st.caption("AI Network Traffic Analyzer • Random Forest + Isolation Forest • Dashboard V2")
+st.caption("AI-Powered Network Intrusion Detection and Anomaly Analysis System | Random Forest + Isolation Forest | Dashboard V2")

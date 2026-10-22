@@ -1,0 +1,13 @@
+DUPLICATE-AWARE EVALUATION
+Training rows: 134299
+Testing rows: 33625
+Conflicting-label groups: 17
+Train/test group overlap: 0
+Accuracy: 0.9917
+Precision: 0.9992
+Attack recall: 0.9842
+F1 score: 0.9916
+ROC-AUC: 0.9978
+Confusion matrix:
+[[16773    14]
+ [  266 16572]]
