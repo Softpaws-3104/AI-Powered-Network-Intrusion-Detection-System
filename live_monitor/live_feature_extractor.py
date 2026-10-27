@@ -44,8 +44,12 @@ def packet_features(packet, previous_timestamp=None):
             row["ICMP"] = 1.0
         elif ip.proto == 2:
             row["IGMP"] = 1.0
+    # Match the original extractor: accept only IPv4 and ARP.
+    # This also rejects IPv6 and unrelated Ethernet packet types.
+    if not (IP in packet or ARP in packet):
+        return None, ts
+
     if IPv6 in packet:
-        # The original extractor discards IPv6 packets.
         return None, ts
 
 
@@ -149,38 +153,100 @@ def aggregate_batch(rows):
 
 
 def capture_batches(iface="eth0", count=100, timeout=30):
-    """Capture at most count packets and yield complete feature batches."""
+    """Capture bounded traffic with dumpcap and aggregate complete feature batches."""
+    import os
+    import subprocess
+    import tempfile
+    from scapy.utils import PcapReader
+
     if not 1 <= count <= 1000:
         raise ValueError("count must be between 1 and 1000")
+    if not 1 <= timeout <= 300:
+        raise ValueError("timeout must be between 1 and 300 seconds")
+    if not iface or iface == "any":
+        raise ValueError("Choose a specific capture interface, such as eth0 or wlan0")
+
+    fd, capture_path = tempfile.mkstemp(
+        prefix="nids_live_", suffix=".pcapng"
+    )
+    os.close(fd)
 
     captured_rows = []
     previous_timestamp = None
-    batches = []
     seen = 0
+    process = None
 
-    def handle(packet):
-        nonlocal previous_timestamp, seen
-        seen += 1
+    try:
+        command = [
+            "dumpcap", "-q", "-i", iface,
+            "-c", str(count),
+            "-a", f"duration:{timeout}",
+            "-w", capture_path,
+        ]
+        print(
+            f"Capturing on {iface}: maximum {count} packets, "
+            f"timeout {timeout}s"
+        )
 
-        row, ts = packet_features(packet, previous_timestamp)
-        previous_timestamp = ts
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            _, stderr = process.communicate(timeout=timeout + 5)
+        except subprocess.TimeoutExpired:
+            process.terminate()
+            try:
+                _, stderr = process.communicate(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                _, stderr = process.communicate()
+            if process.returncode not in (0, -15, 130):
+                raise RuntimeError(
+                    f"dumpcap did not stop cleanly: {stderr.strip()}"
+                )
 
-        if row is not None:
-            row["_timestamp"] = ts
-            captured_rows.append(row)
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"dumpcap failed (exit {process.returncode}): "
+                f"{stderr.strip()}"
+            )
 
-        return seen >= count
+        with PcapReader(capture_path) as reader:
+            for packet in reader:
+                seen += 1
+                row, ts = packet_features(packet, previous_timestamp)
+                if row is not None:
+                    previous_timestamp = ts
+                    row["_timestamp"] = ts
+                    captured_rows.append(row)
 
-    print(f"Capturing on {iface}: maximum {count} packets, timeout {timeout}s")
-    sniff(iface=iface, prn=handle, store=False, count=count, timeout=timeout)
+        batches = []
+        for start_index in range(
+            0, len(captured_rows) - BATCH_SIZE + 1, BATCH_SIZE
+        ):
+            batch = captured_rows[start_index:start_index + BATCH_SIZE]
+            batches.append(aggregate_batch(batch))
 
-    for start in range(0, len(captured_rows) - BATCH_SIZE + 1, BATCH_SIZE):
-        batch = captured_rows[start:start + BATCH_SIZE]
-        batches.append(aggregate_batch(batch))
+        output = pd.DataFrame(batches, columns=FEATURES)
+        print(f"Packets captured: {seen}")
+        print(f"IPv4/ARP-compatible packet rows: {len(captured_rows)}")
+        print(f"Complete feature batches: {len(output)}")
+        print(
+            f"Discarded incomplete rows: "
+            f"{len(captured_rows) % BATCH_SIZE}"
+        )
+        return output
 
-    output = pd.DataFrame(batches, columns=FEATURES)
-    print(f"Packets captured: {seen}")
-    print(f"IPv4/ARP-compatible packet rows: {len(captured_rows)}")
-    print(f"Complete feature batches: {len(output)}")
-    print(f"Discarded incomplete rows: {len(captured_rows) % BATCH_SIZE}")
-    return output
+    finally:
+        if process is not None and process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+        if os.path.exists(capture_path):
+            os.unlink(capture_path)

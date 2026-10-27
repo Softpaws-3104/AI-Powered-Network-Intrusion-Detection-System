@@ -11,7 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from detection_engine.unified_detector import UnifiedDetector
-
+from live_monitor.live_feature_extractor import capture_batches
 # ============================================================
 # PAGE CONFIG
 # ============================================================
@@ -220,7 +220,7 @@ st.divider()
 # ============================================================
 # TABS
 # ============================================================
-tab_overview, tab_protocols, tab_attacks, tab_anomaly, tab_model, tab_data, tab_unified = st.tabs(
+tab_overview, tab_protocols, tab_attacks, tab_anomaly, tab_model, tab_data, tab_unified, tab_live = st.tabs(
     [
         "📊 Overview",
         "🌐 Protocols",
@@ -229,6 +229,7 @@ tab_overview, tab_protocols, tab_attacks, tab_anomaly, tab_model, tab_data, tab_
         "🤖 Models",
         "📁 Data & Export",
         "🤝 Unified Detection",
+        "📡 Live Detection",
     ]
 )
 
@@ -627,6 +628,116 @@ with tab_unified:
         st.info(
             "Check that both saved models exist, their feature names and order match, "
             "and the dataset contains all required model features."
+        )
+
+
+
+with tab_live:
+    st.subheader("Live Network Detection")
+    st.write(
+        "Capture a bounded sample of network traffic, aggregate compatible packets "
+        "into 10-packet feature batches, and inspect predictions from the existing models."
+    )
+    st.warning(
+        "Live predictions are experimental. They are not proof of malicious activity, "
+        "and live feature distributions have not yet been validated against the training data."
+    )
+
+    interface = st.selectbox(
+        "Network interface",
+        options=["eth0", "wlan0", "any"],
+        index=0,
+        key="live_interface",
+        help="Choose an interface that exists on this system. The 'any' option may not be supported by every capture backend.",
+    )
+    packet_limit = st.select_slider(
+        "Maximum packets to capture",
+        options=[10, 20, 30, 50, 100],
+        value=30,
+        key="live_packet_limit",
+    )
+    capture_timeout = st.slider(
+        "Capture timeout (seconds)",
+        min_value=5,
+        max_value=30,
+        value=15,
+        step=5,
+        key="live_capture_timeout",
+    )
+    live_threshold = st.number_input(
+        "Anomaly score threshold",
+        min_value=-0.05,
+        max_value=0.10,
+        value=0.001112,
+        step=0.0005,
+        format="%.6f",
+        key="live_anomaly_threshold",
+        help="Higher scores indicate more unusual traffic. This is not a probability.",
+    )
+
+    if st.button("Capture and Analyze Live Traffic", type="primary", key="run_live_detection"):
+        try:
+            with st.spinner("Capturing packets and building feature batches..."):
+                live_features = capture_batches(
+                    iface=interface,
+                    count=int(packet_limit),
+                    timeout=int(capture_timeout),
+                )
+
+            st.session_state["live_capture_stats"] = {
+                "packets_requested": int(packet_limit),
+                "compatible_rows": len(live_features) * 10,
+                "complete_batches": len(live_features),
+                "features": len(live_features.columns),
+                "interface": interface,
+            }
+
+            if live_features.empty:
+                st.warning(
+                    "No complete 10-packet feature batches were produced. "
+                    "Try a longer timeout or generate ordinary network traffic, then retry."
+                )
+                st.session_state.pop("live_detection_results", None)
+            else:
+                detector = UnifiedDetector()
+                detector.anomaly_threshold = float(live_threshold)
+                live_predictions = detector.predict(live_features)
+                live_results = live_predictions.reset_index(drop=True).copy()
+                live_results.insert(0, "batch_number", range(1, len(live_results) + 1))
+                st.session_state["live_detection_results"] = live_results
+                st.session_state["live_detection_threshold"] = float(live_threshold)
+
+        except PermissionError:
+            st.error(
+                "Packet capture permission was denied. Configure appropriate capture "
+                "permissions for Scapy, or launch the dashboard from a properly authorized "
+                "environment. Avoid running the entire dashboard as root."
+            )
+        except Exception as exc:
+            st.error(f"Live capture or inference failed: {exc}")
+
+    stats = st.session_state.get("live_capture_stats")
+    if stats:
+        st.caption(f"Interface: {stats['interface']}")
+        metric_cols = st.columns(3)
+        metric_cols[0].metric("Complete batches", stats["complete_batches"])
+        metric_cols[1].metric("Features per batch", stats["features"])
+        metric_cols[2].metric("Compatible rows in complete batches", stats["compatible_rows"])
+
+    live_results = st.session_state.get("live_detection_results")
+    if live_results is not None:
+        st.subheader("Live Detection Results")
+        st.caption(
+            f"Anomaly threshold used: "
+            f"{st.session_state.get('live_detection_threshold', 0.001112):.6f}"
+        )
+        st.dataframe(live_results, use_container_width=True)
+        st.download_button(
+            "Download Live Detection CSV",
+            data=live_results.to_csv(index=False).encode("utf-8"),
+            file_name="live_detection_results.csv",
+            mime="text/csv",
+            key="download_live_detection_csv",
         )
 
 st.divider()
