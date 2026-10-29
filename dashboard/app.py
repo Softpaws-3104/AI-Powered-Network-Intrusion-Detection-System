@@ -645,10 +645,10 @@ with tab_live:
 
     interface = st.selectbox(
         "Network interface",
-        options=["eth0", "wlan0", "any"],
+        options=["eth0", "wlan0"],
         index=0,
         key="live_interface",
-        help="Choose an interface that exists on this system. The 'any' option may not be supported by every capture backend.",
+        help="Choose a specific network interface that exists on this system.",
     )
     packet_limit = st.select_slider(
         "Maximum packets to capture",
@@ -676,6 +676,11 @@ with tab_live:
     )
 
     if st.button("Capture and Analyze Live Traffic", type="primary", key="run_live_detection"):
+        # Clear previous results so failed captures cannot display stale detections.
+        st.session_state.pop("live_detection_results", None)
+        st.session_state.pop("live_detection_threshold", None)
+        st.session_state.pop("live_capture_stats", None)
+
         try:
             with st.spinner("Capturing packets and building feature batches..."):
                 live_features = capture_batches(
@@ -709,9 +714,9 @@ with tab_live:
 
         except PermissionError:
             st.error(
-                "Packet capture permission was denied. Configure appropriate capture "
-                "permissions for Scapy, or launch the dashboard from a properly authorized "
-                "environment. Avoid running the entire dashboard as root."
+                "Packet capture permission was denied. Check dumpcap permissions and "
+                "your system's authorized packet-capture configuration. Avoid running the "
+                "entire dashboard as root."
             )
         except Exception as exc:
             st.error(f"Live capture or inference failed: {exc}")

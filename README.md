@@ -123,6 +123,71 @@ Model evaluation has been performed on the available processed dataset. Duplicat
 - Evaluation summaries are stored in `reports/`.
 - Model performance depends on dataset quality, feature preparation, threshold selection, and evaluation methodology.
 
+## Live Traffic Monitoring
+
+The live monitoring component captures authorized network traffic and converts accepted IPv4/ARP packets into feature batches for inference.
+
+- Tested interface: `eth0` in the current Kali environment.
+- Tested capture limit: up to 100 packets with a bounded timeout.
+- Feature aggregation: batches of 10 accepted packets.
+- Feature schema: 39 features in the expected model input order.
+- Incomplete batches are discarded.
+- The unified detector returns Random Forest classification results, Isolation Forest anomaly scores, and a combined decision.
+
+Run the dashboard from the project root:
+
+```bash
+.venv/bin/python -m streamlit run dashboard/app.py
+```
+
+Live packet capture should only be used on networks and interfaces you are authorized to monitor.
+
+## Evaluation Results
+
+### Random Forest
+
+The existing group-aware diagnostic evaluation reported:
+
+| Metric | Result |
+|---|---:|
+| Accuracy | 99.15% |
+| Precision | 99.95% |
+| Attack recall | 98.34% |
+| F1 score | 99.14% |
+| ROC-AUC | 0.9977 |
+
+### Isolation Forest
+
+The existing evaluation reported:
+
+| Metric | Result |
+|---|---:|
+| Accuracy | 84.63% |
+| Attack precision | 92.83% |
+| Attack recall | 75.06% |
+| Attack F1 score | 83.00% |
+| ROC-AUC | 0.9455 |
+
+These are offline results from the available dataset. They do not establish equivalent detection performance on real-world network traffic.
+
+## Production and Diagnostic Models
+
+The dashboard currently uses these production model paths:
+
+- `models/random_forest_binary.joblib` — Random Forest classifier.
+- `models/isolation_forest_v2.joblib` — Isolation Forest model bundle.
+
+Other model files are diagnostic or experimental artifacts. Do not treat them as production replacements without separate evaluation and an explicit model-selection decision.
+
+## Additional Limitations and Safe Training Practices
+
+- The dataset's `Number` feature has a substantial association with the class distribution and can influence individual predictions.
+- Live feature extraction and inference have passed structural tests, but complete equivalence between live aggregation and training-time feature generation has not been established.
+- An anomaly flag indicates unusual behavior; it does not prove that an attack occurred.
+- Live predictions have not been validated against a sufficiently representative set of labeled real-world traffic.
+- Inspect training-script input and output paths before running them. In particular, verify `train_model.py` because its previously inspected base-directory setting points to a different project directory.
+- Back up existing model artifacts before retraining. Do not replace production models with diagnostic or experimental models without reviewing their evaluation results.
+
 ## Project Goal
 
 Develop a practical machine-learning-based network security tool that combines intrusion classification, anomaly detection, and interactive analysis to support cybersecurity investigation.
